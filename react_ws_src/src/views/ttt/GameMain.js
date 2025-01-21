@@ -194,18 +194,16 @@ export default class SetName extends Component {
 	turn_comp () {
 
 		let { cell_vals } = this.state
-		let empty_cells_arr = []
-
-
-		for (let i=1; i<=9; i++) 
-			!cell_vals['c'+i] && empty_cells_arr.push('c'+i)
+		// let empty_cells_arr = []
+		// for (let i=1; i<=9; i++) 
+		// 	!cell_vals['c'+i] && empty_cells_arr.push('c'+i)
 		// console.log(cell_vals, empty_cells_arr, rand_arr_elem(empty_cells_arr))
 
-		const c = rand_arr_elem(empty_cells_arr)
+		// const c = rand_arr_elem(empty_cells_arr)
+		const c = this.find_unbeatable_movie(cell_vals)
 		cell_vals[c] = 'o'
 
 		TweenMax.from(this.refs[c], 0.7, {opacity: 0, scaleX:0, scaleY:0, ease: Power4.easeOut})
-
 
 		// this.setState({
 		// 	cell_vals: cell_vals,
@@ -213,10 +211,91 @@ export default class SetName extends Component {
 		// })
 
 		this.state.cell_vals = cell_vals
-
 		this.check_turn()
 	}
 
+	find_unbeatable_movie(board) {
+		let bestScore = -Infinity
+		let bestMove = null
+		
+		// Try each available move
+		for (let i = 1; i <= 9; i++) {
+			const cell = 'c' + i
+			if (!board[cell]) {
+				// Make the move
+				board[cell] = 'o'
+				// Get score from minimax
+				const score = this.minimax(board, 0, false)
+				// Undo the move
+				board[cell] = null
+				
+				// Update best move if better score found
+				if (score > bestScore) {
+					bestScore = score
+					bestMove = cell
+				}
+			}
+		}
+		
+		return bestMove
+	}
+	
+	minimax(board, depth, isMaximizing) {
+		const result = this.check_winner(board)
+		if (result !== null) {
+			return result === 'o' ? 10 - depth : depth - 10
+		}
+		if (this.is_board_full(board)) {
+			return 0
+		}
+		
+		if (isMaximizing) {
+			let bestScore = -Infinity
+			for (let i = 1; i <= 9; i++) {
+				const cell = 'c' + i
+				if (!board[cell]) {
+					board[cell] = 'o'
+					const score = this.minimax(board, depth + 1, false)
+					board[cell] = null
+					bestScore = Math.max(score, bestScore)
+				}
+			}
+			return bestScore
+		} else {
+			let bestScore = Infinity
+			for (let i = 1; i <= 9; i++) {
+				const cell = 'c' + i
+				if (!board[cell]) {
+					board[cell] = 'x'
+					const score = this.minimax(board, depth + 1, true)
+					board[cell] = null
+					bestScore = Math.min(score, bestScore)
+				}
+			}
+			return bestScore
+		}
+	}
+	
+	check_winner(board) {
+		// Check all possible winning combinations
+		for (const set of this.win_sets) {
+			if (board[set[0]] && 
+				board[set[0]] === board[set[1]] && 
+				board[set[0]] === board[set[2]]) {
+				return board[set[0]]
+			}
+		}
+		return null
+	}
+	
+	is_board_full(board) {
+		for (let i = 1; i <= 9; i++) {
+			if (!board['c' + i]) {
+				return false
+			}
+		}
+		return true
+	}
 
 //	------------------------	------------------------	------------------------
 //	------------------------	------------------------	------------------------
