@@ -436,12 +436,12 @@ export default class SetName extends Component {
 		const winner = this.check_winner(this.state.cell_vals)
 		
 		if (winner) {
-			this.refs[set[0]].classList.add('win')
-			this.refs[set[1]].classList.add('win')
-			this.refs[set[2]].classList.add('win')
+			// this.refs[set[0]].classList.add('win')
+			// this.refs[set[1]].classList.add('win')
+			// this.refs[set[2]].classList.add('win')
 
 			TweenMax.killAll(true)
-			TweenMax.from('td.win', 1, {opacity: 0, ease: Linear.easeIn})
+			TweenMax.from('td.win', 1, {opacity: 0, ease: Linear.easeIn}) 
 
 
 			this.setState({
