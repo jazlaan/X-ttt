@@ -5,6 +5,7 @@ import SetName from './SetName'
 import SetGameType from './SetGameType'
 
 import GameMain from './GameMain'
+import SetBoardSize from './SetBoardSize'
 
 export default class Ttt extends Component {
 
@@ -12,7 +13,8 @@ export default class Ttt extends Component {
 		super(props)
 
 		this.state = {
-			game_step: this.set_game_step()
+			game_step: this.set_game_step(),
+			board_size: 0
 		}
 	}
 
@@ -40,8 +42,12 @@ export default class Ttt extends Component {
 					{game_step == 'set_game_type' && <SetGameType 
 														onSetType={this.saveGameType.bind(this)} 
 													/>}
+					{game_step == 'set_board_size' && <SetBoardSize 
+														onSetSize={this.saveBoardSize.bind(this)} 
+													/>}
 					{game_step == 'start_game' && <GameMain 
 														game_type={this.state.game_type}
+														board_size={this.state.board_size}
 														onEndGame={this.gameEnd.bind(this)} 
 													/>}
 
@@ -71,7 +77,7 @@ export default class Ttt extends Component {
 
 	gameEnd (t) {
 		this.state.game_type = null
-
+		this.state.board_size = 0
 		this.upd_game_step()
 	}
 
@@ -87,12 +93,23 @@ export default class Ttt extends Component {
 
 //	------------------------	------------------------	------------------------
 
+
+	saveBoardSize(size) {
+		this.state.board_size = size		
+		this.upd_game_step()
+	}
+
+//	------------------------	------------------------	------------------------
+
 	set_game_step () {
+
 
 		if (!app.settings.curr_user || !app.settings.curr_user.name)
 			return 'set_name'
 		else if (!this.state.game_type)
 			return 'set_game_type'
+		else if (!this.state.board_size)
+			return 'set_board_size'
 		else
 			return 'start_game'
 	}

@@ -12,18 +12,19 @@ export default class SetName extends Component {
 	constructor (props) {
 		super(props)
 
-		this.win_sets = [
-			['c1', 'c2', 'c3'],
-			['c4', 'c5', 'c6'],
-			['c7', 'c8', 'c9'],
+		// this.win_sets = [
+		// 	['c1', 'c2', 'c3'],
+		// 	['c4', 'c5', 'c6'],
+		// 	['c7', 'c8', 'c9'],
 
-			['c1', 'c4', 'c7'],
-			['c2', 'c5', 'c8'],
-			['c3', 'c6', 'c9'],
+		// 	['c1', 'c4', 'c7'],
+		// 	['c2', 'c5', 'c8'],
+		// 	['c3', 'c6', 'c9'],
 
-			['c1', 'c5', 'c9'],
-			['c3', 'c5', 'c7']
-		]
+		// 	['c1', 'c5', 'c9'],
+		// 	['c3', 'c5', 'c7']
+		// ]
+		this.win_sets = this.win_sets_by_board_size(this.props.board_size)
 
 
 		if (this.props.game_type != 'live')
@@ -45,6 +46,50 @@ export default class SetName extends Component {
 		}
 	}
 
+//	------------------------	------------------------	------------------------
+
+		win_sets_by_board_size(size) {
+		let sets = []
+		
+		// rows
+		for(let i = 0; i < size; i++) {
+			let row = []
+			for(let j = 0; j < size; j++) {
+				row.push(`c${i * size + j + 1}`)
+			}
+			sets.push(row)
+		}
+		
+		// columns 
+		for(let i = 0; i < size; i++) {
+			let col = []
+			for(let j = 0; j < size; j++) {
+				col.push(`c${j * size + i + 1}`)
+			}
+			sets.push(col)
+		}
+		
+		// diagonals
+		for(let i = 0; i <= size - size; i++) {
+			for(let j = 0; j <= size - size; j++) {				let diag = []
+				let antiDiag = []
+				for(let k = 0; k < size; k++) {
+					if(i + k < size && j + k < size) {
+						diag.push(`c${(i + k) * size + (j + k) + 1}`)
+						if(j + size - 1 - k >= 0) {
+							antiDiag.push(`c${(i + k) * size + (j + size - 1 - k) + 1}`)
+						}
+					}
+				}
+				if(diag.length === size) sets.push(diag)
+				if(antiDiag.length === size) sets.push(antiDiag)
+			}
+		}
+		
+		return sets
+	}
+	
+	
 //	------------------------	------------------------	------------------------
 
 	componentDidMount () {
@@ -107,7 +152,27 @@ export default class SetName extends Component {
 
 	render () {
 		const { cell_vals } = this.state
-		// console.log(cell_vals)
+		const size = this.props.board_size
+		
+		let variable_rows = []
+		for(let i = 0; i < size; i++) {
+			let cells = []
+			for(let j = 0; j < size; j++) {
+				const cellId = `c${i * size + j + 1}`
+				cells.push(
+					<td 
+						key={cellId}
+						id={`game_board-${cellId}`} 
+						ref={cellId}
+						onClick={this.click_cell.bind(this)}
+						className={`${j > 0 && j < size-1 ? 'vbrd' : ''} ${i > 0 && i < size-1 ? 'hbrd' : ''}`}
+					>
+						{this.cell_cont(cellId)}
+					</td>
+				)
+			}
+			variable_rows.push(<tr key={i}>{cells}</tr>)
+		}
 
 		return (
 			<div id='GameMain'>
@@ -121,23 +186,9 @@ export default class SetName extends Component {
 
 				<div id="game_board">
 					<table>
-					<tbody>
-						<tr>
-							<td id='game_board-c1' ref='c1' onClick={this.click_cell.bind(this)}> {this.cell_cont('c1')} </td>
-							<td id='game_board-c2' ref='c2' onClick={this.click_cell.bind(this)} className="vbrd"> {this.cell_cont('c2')} </td>
-							<td id='game_board-c3' ref='c3' onClick={this.click_cell.bind(this)}> {this.cell_cont('c3')} </td>
-						</tr>
-						<tr>
-							<td id='game_board-c4' ref='c4' onClick={this.click_cell.bind(this)} className="hbrd"> {this.cell_cont('c4')} </td>
-							<td id='game_board-c5' ref='c5' onClick={this.click_cell.bind(this)} className="vbrd hbrd"> {this.cell_cont('c5')} </td>
-							<td id='game_board-c6' ref='c6' onClick={this.click_cell.bind(this)} className="hbrd"> {this.cell_cont('c6')} </td>
-						</tr>
-						<tr>
-							<td id='game_board-c7' ref='c7' onClick={this.click_cell.bind(this)}> {this.cell_cont('c7')} </td>
-							<td id='game_board-c8' ref='c8' onClick={this.click_cell.bind(this)} className="vbrd"> {this.cell_cont('c8')} </td>
-							<td id='game_board-c9' ref='c9' onClick={this.click_cell.bind(this)}> {this.cell_cont('c9')} </td>
-						</tr>
-					</tbody>
+						<tbody>
+							{variable_rows}
+						</tbody>
 					</table>
 				</div>
 
@@ -153,10 +204,12 @@ export default class SetName extends Component {
 	click_cell (e) {
 		// console.log(e.currentTarget.id.substr(11))
 		// console.log(e.currentTarget)
-
+		
 		if (!this.state.next_turn_ply || !this.state.game_play) return
 
-		const cell_id = e.currentTarget.id.substr(11)
+		//const cell_id = e.currentTarget.id.substr(11)
+		const cell_id = e.target.getAttribute('ref') || e.target.id.split('-')[1]
+		
 		if (this.state.cell_vals[cell_id]) return
 
 		if (this.props.game_type != 'live')
@@ -176,17 +229,17 @@ export default class SetName extends Component {
 
 		TweenMax.from(this.refs[cell_id], 0.7, {opacity: 0, scaleX:0, scaleY:0, ease: Power4.easeOut})
 
-
-		// this.setState({
-		// 	cell_vals: cell_vals,
-		// 	next_turn_ply: false
-		// })
+		this.setState({
+			cell_vals: cell_vals,
+			next_turn_ply: false
+		}, () => {
+			this.check_turn()
+		})
 
 		// setTimeout(this.turn_comp.bind(this), rand_to_fro(500, 1000));
+		// this.state.cell_vals = cell_vals
 
-		this.state.cell_vals = cell_vals
 
-		this.check_turn()
 	}
 
 //	------------------------	------------------------	------------------------
@@ -194,24 +247,35 @@ export default class SetName extends Component {
 	turn_comp () {
 
 		let { cell_vals } = this.state
-		// let empty_cells_arr = []
-		// for (let i=1; i<=9; i++) 
-		// 	!cell_vals['c'+i] && empty_cells_arr.push('c'+i)
-		// console.log(cell_vals, empty_cells_arr, rand_arr_elem(empty_cells_arr))
+		let empty_cells_arr = []
 
-		// const c = rand_arr_elem(empty_cells_arr)
-		const c = this.find_unbeatable_movie(cell_vals)
-		cell_vals[c] = 'o'
+		const size = this.props.board_size
+		const totalCells = size * size
 
-		TweenMax.from(this.refs[c], 0.7, {opacity: 0, scaleX:0, scaleY:0, ease: Power4.easeOut})
+		// get empty cells
+		for (let i = 1; i <= totalCells; i++) {
+			const cell = 'c' + i
+			if (!cell_vals[cell]) {
+				empty_cells_arr.push(cell)
+			}
+		}
 
-		// this.setState({
-		// 	cell_vals: cell_vals,
-		// 	next_turn_ply: true
-		// })
+		if (empty_cells_arr.length > 0) {
+			// const c = this.find_unbeatable_movie(cell_vals)
+			const c = empty_cells_arr[Math.floor(Math.random() * empty_cells_arr.length)]
+			cell_vals[c] = 'o'
 
-		this.state.cell_vals = cell_vals
-		this.check_turn()
+			TweenMax.from(this.refs[c], 0.7, {opacity: 0, scaleX:0, scaleY:0, ease: Power4.easeOut})
+
+			// this.state.cell_vals = cell_vals
+			
+			this.setState({
+				cell_vals: cell_vals,
+				next_turn_ply: true
+			}, () => {
+				this.check_turn()
+			})
+		}
 	}
 
 	find_unbeatable_movie(board) {
@@ -277,19 +341,37 @@ export default class SetName extends Component {
 	}
 	
 	check_winner(board) {
-		// Check all possible winning combinations
+		const size = this.props.board_size
+		// Check all possible winning combinations on new sets
 		for (const set of this.win_sets) {
-			if (board[set[0]] && 
-				board[set[0]] === board[set[1]] && 
-				board[set[0]] === board[set[2]]) {
-				return board[set[0]]
+			if (board[set[0]]) {
+				let count = 1
+				for (let i = 1; i < set.length; i++) {
+					if (board[set[0]] === board[set[i]]) {
+						count++
+					} else {
+						break
+					}
+				}
+				if (count === size) {
+					// winning cells
+					set.forEach(cellId => {
+						if (this.refs[cellId]) {
+							this.refs[cellId].classList.add('win')
+						}
+					})
+					return board[set[0]]
+				}
 			}
 		}
 		return null
 	}
 	
 	is_board_full(board) {
-		for (let i = 1; i <= 9; i++) {
+		const size = this.props.board_size
+		const totalCells = size * size
+		
+		for (let i = 1; i <= totalCells; i++) {
 			if (!board['c' + i]) {
 				return false
 			}
@@ -309,7 +391,7 @@ export default class SetName extends Component {
 		TweenMax.from(this.refs[cell_id], 0.7, {opacity: 0, scaleX:0, scaleY:0, ease: Power4.easeOut})
 
 		this.socket.emit('ply_turn', { cell_id: cell_id });
-
+		
 		// this.setState({
 		// 	cell_vals: cell_vals,
 		// 	next_turn_ply: false
@@ -334,7 +416,7 @@ export default class SetName extends Component {
 		cell_vals[c] = 'o'
 
 		TweenMax.from(this.refs[c], 0.7, {opacity: 0, scaleX:0, scaleY:0, ease: Power4.easeOut})
-
+		
 
 		// this.setState({
 		// 	cell_vals: cell_vals,
@@ -351,31 +433,9 @@ export default class SetName extends Component {
 //	------------------------	------------------------	------------------------
 
 	check_turn () {
-
-		const { cell_vals } = this.state
-
-		let win = false
-		let set
-		let fin = true
-
-		if (this.props.game_type!='live')
-			this.state.game_stat = 'Play'
-
-
-		for (let i=0; !win && i<this.win_sets.length; i++) {
-			set = this.win_sets[i]
-			if (cell_vals[set[0]] && cell_vals[set[0]]==cell_vals[set[1]] && cell_vals[set[0]]==cell_vals[set[2]])
-				win = true
-		}
-
-
-		for (let i=1; i<=9; i++) 
-			!cell_vals['c'+i] && (fin = false)
-
-		// win && console.log('win set: ', set)
-
-		if (win) {
+		const winner = this.check_winner(this.state.cell_vals)
 		
+		if (winner) {
 			this.refs[set[0]].classList.add('win')
 			this.refs[set[1]].classList.add('win')
 			this.refs[set[2]].classList.add('win')
@@ -383,30 +443,27 @@ export default class SetName extends Component {
 			TweenMax.killAll(true)
 			TweenMax.from('td.win', 1, {opacity: 0, ease: Linear.easeIn})
 
+
 			this.setState({
-				game_stat: (cell_vals[set[0]]=='x'?'You':'Opponent')+' win',
-				game_play: false
+				game_stat: winner === 'x' ? 'You Won!' : 'Computer Won!',
+				game_play: false,
+				next_turn_ply: false
 			})
 
 			this.socket && this.socket.disconnect();
-
-		} else if (fin) {
-		
+		} else if (this.is_board_full(this.state.cell_vals)) {
 			this.setState({
-				game_stat: 'Draw',
-				game_play: false
+				game_stat: 'Draw!',
+				game_play: false,
+				next_turn_ply: false
 			})
-
+			
 			this.socket && this.socket.disconnect();
 
-		} else {
-			this.props.game_type!='live' && this.state.next_turn_ply && setTimeout(this.turn_comp.bind(this), rand_to_fro(500, 1000));
-
-			this.setState({
-				next_turn_ply: !this.state.next_turn_ply
-			})
+		} else if (!this.state.next_turn_ply) {
+			// delay for comp move
+			setTimeout(this.turn_comp.bind(this), rand_to_fro(500, 1000))
 		}
-		
 	}
 
 //	------------------------	------------------------	------------------------
